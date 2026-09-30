@@ -5,7 +5,7 @@
 // reads the payment, refunds part of it, then the rest, and checks each
 // answer. Needs .env.sandbox (see .env.example).
 
-import { LinePay, LinePayApiError } from "../dist/index.js";
+import { LinePay, LinePayApiError } from "../dist/index.mjs";
 
 const channelId = process.env.LINEPAY_CHANNEL_ID;
 const channelSecret = process.env.LINEPAY_CHANNEL_SECRET;

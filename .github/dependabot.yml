@@ -8,11 +8,6 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: development
-    ignore:
-      # TypeScript 7 (the native compiler) has no JS API, which tsup needs to
-      # emit the .d.ts files: stay on 5.x until the build tooling supports it.
-      - dependency-name: typescript
-        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
   - package-ecosystem: github-actions
     directory: /

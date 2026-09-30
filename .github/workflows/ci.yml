@@ -73,7 +73,7 @@ jobs:
       - name: Load ESM
         run: |
           node --input-type=module -e '
-            import { LinePay } from "./dist/index.js";
+            import { LinePay } from "./dist/index.mjs";
             new LinePay({ channelId: "1", channelSecret: "s", env: "sandbox" });
           '
 
