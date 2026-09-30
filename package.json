@@ -59,7 +59,8 @@
     "test:sandbox": "node --env-file-if-exists=.env.sandbox ./node_modules/vitest/vitest.mjs run tests/sandbox.test.ts",
     "sandbox:flow": "node --env-file-if-exists=.env.sandbox --experimental-strip-types scripts/sandbox-flow.ts",
     "coverage": "vitest run --coverage",
-    "lint:package": "publint --strict && attw --pack . --profile node16"
+    "lint:package": "publint --strict && attw --pack . --profile node16",
+    "smoke": "node scripts/smoke.mjs && node scripts/smoke.mjs --cjs"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",

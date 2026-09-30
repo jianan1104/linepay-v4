@@ -54,6 +54,10 @@ jobs:
       - run: npm run typecheck
       - run: npm run coverage
       - run: npm run build
+      - name: Smoke test the build (ESM and CommonJS)
+        run: |
+          node scripts/smoke.mjs
+          node scripts/smoke.mjs --cjs
       - run: npm run lint:package
       - name: Live sandbox tests
         if: env.LINEPAY_CHANNEL_ID != ''

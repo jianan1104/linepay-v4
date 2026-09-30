@@ -39,6 +39,10 @@ jobs:
       - name: Unit tests with coverage thresholds
         run: npm run coverage
       - run: npm run build
+      - name: Smoke test the build (ESM and CommonJS)
+        run: |
+          node scripts/smoke.mjs
+          node scripts/smoke.mjs --cjs
       - name: Package checks (publint, types for ESM/CJS)
         run: npm run lint:package
       - name: Coverage summary
@@ -53,29 +57,25 @@ jobs:
 
   node20:
     name: Runs on Node 20
-    # The package supports Node 20: build there and load both module formats.
+    # The package supports Node 20, but the build tooling needs Node 22.18+:
+    # build on Node 24, then run the built package on Node 20 like a user's app.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run build
-      - name: Load CommonJS
-        run: |
-          node -e '
-            const { LinePay, parseLossless } = require("./dist/index.cjs");
-            if (parseLossless("{\"t\":2023042201206549310}").t !== "2023042201206549310") process.exit(1);
-            new LinePay({ channelId: "1", channelSecret: "s", env: "sandbox" });
-          '
-      - name: Load ESM
-        run: |
-          node --input-type=module -e '
-            import { LinePay } from "./dist/index.mjs";
-            new LinePay({ channelId: "1", channelSecret: "s", env: "sandbox" });
-          '
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+      - run: node --version
+      - name: Smoke test (ESM)
+        run: node scripts/smoke.mjs
+      - name: Smoke test (CommonJS)
+        run: node scripts/smoke.mjs --cjs
 
   sandbox:
     name: LINE Pay sandbox (live)

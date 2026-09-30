@@ -15,6 +15,7 @@ npm run coverage      # unit tests + coverage thresholds: 100% lines/functions/s
 npm run typecheck
 npm run build         # ESM + CJS + type declarations into dist/
 npm run lint:package  # publint + "are the types wrong" on the packed package
+npm run smoke         # run the built package (ESM + CJS) against a fake LINE Pay
 ```
 
 ### Testing against the LINE Pay sandbox
