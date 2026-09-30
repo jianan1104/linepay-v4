@@ -1,14 +1,33 @@
 name: CI
+
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Weekly: the sandbox job notices when LINE Pay changes behaviour.
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: Test (Node ${{ matrix.node }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        node: [22, 24] # vitest needs Node 22.12+
+        os: [ubuntu-latest]
+        node: [22, 24] # the test runner needs Node 22.12+
+        include:
+          - os: windows-latest
+            node: 24
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,10 +36,24 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
-      - run: npm run coverage # unit tests + coverage thresholds (the sandbox tests skip without credentials)
+      - name: Unit tests with coverage thresholds
+        run: npm run coverage
       - run: npm run build
+      - name: Package checks (publint, types for ESM/CJS)
+        run: npm run lint:package
+      - name: Coverage summary
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 24
+        shell: bash
+        run: |
+          node -e '
+            const t = require("./coverage/coverage-summary.json").total;
+            const row = (k) => `| ${k} | ${t[k].pct}% |`;
+            console.log(["### Coverage", "| | |", "|---|---|", ...["lines","statements","functions","branches"].map(row)].join("\n"));
+          ' >> "$GITHUB_STEP_SUMMARY"
+
   node20:
-    # The package itself supports Node 20: build it there and load both formats.
+    name: Runs on Node 20
+    # The package supports Node 20: build there and load both module formats.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,5 +63,39 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: node -e 'const { LinePay, parseLossless } = require("./dist/index.cjs"); if (parseLossless("{\"t\":2023042201206549310}").t !== "2023042201206549310") process.exit(1); new LinePay({ channelId: "1", channelSecret: "s", env: "sandbox" })'
-      - run: node --input-type=module -e 'import { LinePay } from "./dist/index.js"; new LinePay({ channelId: "1", channelSecret: "s", env: "sandbox" })'
+      - name: Load CommonJS
+        run: |
+          node -e '
+            const { LinePay, parseLossless } = require("./dist/index.cjs");
+            if (parseLossless("{\"t\":2023042201206549310}").t !== "2023042201206549310") process.exit(1);
+            new LinePay({ channelId: "1", channelSecret: "s", env: "sandbox" });
+          '
+      - name: Load ESM
+        run: |
+          node --input-type=module -e '
+            import { LinePay } from "./dist/index.js";
+            new LinePay({ channelId: "1", channelSecret: "s", env: "sandbox" });
+          '
+
+  sandbox:
+    name: LINE Pay sandbox (live)
+    # Needs the repository secrets LINEPAY_CHANNEL_ID / LINEPAY_CHANNEL_SECRET
+    # (sandbox credentials). Not on pull requests: forks can't see secrets.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      LINEPAY_CHANNEL_ID: ${{ secrets.LINEPAY_CHANNEL_ID }}
+      LINEPAY_CHANNEL_SECRET: ${{ secrets.LINEPAY_CHANNEL_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Live tests against sandbox-api-pay.line.me
+        if: env.LINEPAY_CHANNEL_ID != ''
+        run: npm run test:sandbox
+      - name: No sandbox credentials configured
+        if: env.LINEPAY_CHANNEL_ID == ''
+        run: echo "::notice::Skipped. Set the LINEPAY_CHANNEL_ID and LINEPAY_CHANNEL_SECRET repository secrets to run the live sandbox tests."

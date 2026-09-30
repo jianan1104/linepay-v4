@@ -1,0 +1,44 @@
+name: Bug report
+description: Something in linepay-v4 doesn't work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! **Never paste your channel secret, real transaction data or customer details.**
+        Security problems: please follow SECURITY.md instead of opening a public issue.
+  - type: input
+    id: version
+    attributes:
+      label: linepay-v4 version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: Runtime
+      description: Node.js version (and framework, if any)
+      placeholder: "Node 24.1, Next.js 16"
+    validations:
+      required: true
+  - type: dropdown
+    id: env
+    attributes:
+      label: LINE Pay environment
+      options: [sandbox, production, both]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The call you made, what you expected, and what you got — include the returnCode / error name.
+      render: ts
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: A minimal snippet, with credentials and IDs removed.

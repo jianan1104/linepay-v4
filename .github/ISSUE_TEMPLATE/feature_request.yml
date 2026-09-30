@@ -1,0 +1,15 @@
+name: Feature request
+description: Suggest an addition or change
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The integration problem, and which LINE Pay API / docs page it concerns.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would help

@@ -12,6 +12,14 @@
     "thailand",
     "sdk"
   ],
+  "homepage": "https://github.com/jianan1104/linepay-v4#readme",
+  "bugs": {
+    "url": "https://github.com/jianan1104/linepay-v4/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jianan1104/linepay-v4.git"
+  },
   "license": "MIT",
   "author": "林建安 <linjianan1104@gmail.com>",
   "type": "module",
@@ -39,28 +47,26 @@
   "engines": {
     "node": ">=20"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build",
-    "test:sandbox": "node --env-file=.env.sandbox ./node_modules/vitest/vitest.mjs run tests/sandbox.test.ts",
-    "sandbox:flow": "node --env-file=.env.sandbox --experimental-strip-types scripts/sandbox-flow.ts",
-    "coverage": "vitest run --coverage"
+    "prepublishOnly": "npm run typecheck && npm run coverage && npm run build && npm run lint:package",
+    "test:sandbox": "node --env-file-if-exists=.env.sandbox ./node_modules/vitest/vitest.mjs run tests/sandbox.test.ts",
+    "sandbox:flow": "node --env-file-if-exists=.env.sandbox --experimental-strip-types scripts/sandbox-flow.ts",
+    "coverage": "vitest run --coverage",
+    "lint:package": "publint --strict && attw --pack . --profile node16"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
     "@types/node": "^26.6.3",
     "@vitest/coverage-v8": "^5.0.3",
+    "publint": "^0.3.24",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^5.0.3"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jianan1104/linepay-v4.git"
-  },
-  "homepage": "https://github.com/jianan1104/linepay-v4#readme",
-  "bugs": {
-    "url": "https://github.com/jianan1104/linepay-v4/issues"
   }
 }

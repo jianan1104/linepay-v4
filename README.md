@@ -1,6 +1,30 @@
 # linepay-v4
 
-Zero-dependency TypeScript SDK for the [LINE Pay Online API v4](https://developers-pay.line.me/online-api-v4) (Taiwan, Thailand). Unofficial — not affiliated with LINE Corporation.
+[![npm version](https://img.shields.io/npm/v/linepay-v4.svg)](https://www.npmjs.com/package/linepay-v4)
+[![CI](https://github.com/jianan1104/linepay-v4/actions/workflows/ci.yml/badge.svg)](https://github.com/jianan1104/linepay-v4/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![node](https://img.shields.io/node/v/linepay-v4.svg)](package.json)
+[![types: TypeScript](https://img.shields.io/badge/types-TypeScript-3178c6.svg)](src/types.ts)
+
+Zero-dependency TypeScript SDK for the [LINE Pay Online API v4](https://developers-pay.line.me/online-api-v4) (Taiwan, Thailand).
+
+> **Unofficial.** Not affiliated with or endorsed by LINE Corporation or LINE Pay. "LINE" and "LINE Pay" are trademarks of their respective owners.
+
+## Contents
+
+- [Why](#why)
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Usage](#usage)
+- [Errors](#errors)
+- [API](#api)
+- [Options](#options)
+- [Testing against the LINE Pay sandbox](#testing-against-the-line-pay-sandbox)
+- [Contributing](#contributing)
+- [Security](#security)
+- [License](#license)
+
+## Why
 
 It gets the parts right that break real integrations:
 
@@ -8,11 +32,36 @@ It gets the parts right that break real integrations:
 - **Correct signing.** `X-LINE-Authorization` is computed over the exact body bytes that are sent (or the query string for GET), with a fresh nonce per call — no more mysterious `1106`.
 - **Unknown outcomes are not failures.** A timeout on `confirm`, `capture` or `refund` may still have moved money. Those throw `LinePayUnknownOutcomeError` with `movesMoney: true`, so you reconcile instead of retrying blindly.
 - **Actionable errors.** Every `returnCode` comes with a category — `retry`, `reconcile`, `customer` or `merchant` — so you know what to do with it.
-- **Checks before sending.** Amounts that don't add up across packages and products (LINE Pay's `1124`) are caught locally with a readable message.
-- Node 20+, ESM and CommonJS, full types, per-API read timeouts from the reference.
+- **Checks before sending.** Amounts that don't add up across packages and products are caught locally with a readable message.
+- **Tested against the real sandbox.** Behaviour the reference doesn't document (negative refund amounts, `1172` on a second confirm, …) is pinned in live tests — see [what the sandbox taught us](#what-the-sandbox-taught-us).
+- No runtime dependencies. ESM and CommonJS, full types, Node.js 20+, per-API read timeouts from the reference.
+
+## Install
 
 ```sh
 npm install linepay-v4
+```
+
+## Quick start
+
+```ts
+import { LinePay } from "linepay-v4";
+
+const linePay = new LinePay({
+  channelId: process.env.LINE_PAY_CHANNEL_ID!,
+  channelSecret: process.env.LINE_PAY_CHANNEL_SECRET!, // server only
+  env: "sandbox",
+});
+
+const { transactionId, paymentUrl } = await linePay.requestPayment({
+  amount: 100,
+  currency: "TWD",
+  orderId: "ORDER-1-1",
+  packages: [{ id: "shop", amount: 100, products: [{ name: "Yogurt", quantity: 1, price: 100 }] }],
+  redirectUrls: { confirmUrl: "https://shop.example/pay/confirm", cancelUrl: "https://shop.example/pay/cancel" },
+});
+// Send the customer to paymentUrl.web; when LINE Pay brings them back to confirmUrl:
+await linePay.confirm(transactionId, { amount: 100, currency: "TWD" });
 ```
 
 ## Usage
@@ -113,7 +162,13 @@ With `redirectUrls.confirmUrlType: "NONE"`, poll `checkPaymentRequest(transactio
 
 `resultCodeInfo(code)` returns the description and category for any code.
 
-## Other exports
+## API
+
+### `new LinePay(options)`
+
+See [Options](#options). Methods: `requestPayment`, `checkPaymentRequest`, `confirm`, `capture`, `void`, `refund`, `getPaymentDetails`, `preapproved.check`, `preapproved.pay`, `preapproved.discard` — each documented with its LINE Pay endpoint in the type declarations.
+
+### Other exports
 
 - `createSignature(channelSecret, apiPath, bodyOrQuery, nonce)` — the raw signer, if you need it elsewhere.
 - `parseLossless(text)` — `JSON.parse` that keeps 16+-digit integers as strings.
@@ -175,15 +230,14 @@ Things the reference doesn't say, observed against the sandbox and pinned in `te
 | a second *request* with the same `orderId` | accepted in the sandbox — keep your orderIds unique per attempt yourself |
 | `amount` ≠ Σ packages | `2101` (`form.amount != sum(packages[].amount) + sum(packages[].userFee) + shippingFee`) |
 
-## Development
+## Contributing
 
-```sh
-npm test            # unit tests (mocked fetch)
-npm run coverage    # unit tests with coverage thresholds (100% lines/functions, 95% branches)
-npm run typecheck
-npm run build       # ESM + CJS + types into dist/
-```
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the development setup, tests and release process, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+
+## Security
+
+Please report vulnerabilities privately — see [SECURITY.md](SECURITY.md). Keep your channel secret on the server; never commit it.
 
 ## License
 
-MIT
+[MIT](LICENSE) © 林建安
