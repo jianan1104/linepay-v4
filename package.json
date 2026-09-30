@@ -43,7 +43,9 @@
     "build": "tsup",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "test:sandbox": "node --env-file=.env.sandbox ./node_modules/vitest/vitest.mjs run tests/sandbox.test.ts",
+    "sandbox:flow": "node --env-file=.env.sandbox --experimental-strip-types scripts/sandbox-flow.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
