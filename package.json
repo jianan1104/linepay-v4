@@ -1,0 +1,62 @@
+{
+  "name": "linepay-v4",
+  "version": "0.1.0",
+  "description": "Zero-dependency TypeScript SDK for the LINE Pay Online API v4 — correct signing, lossless 19-digit transaction IDs, unknown-outcome aware errors.",
+  "keywords": [
+    "linepay",
+    "line-pay",
+    "line",
+    "payment",
+    "online-api-v4",
+    "taiwan",
+    "thailand",
+    "sdk"
+  ],
+  "license": "MIT",
+  "author": "林建安 <linjianan1104@gmail.com>",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jianan1104/linepay-v4.git"
+  },
+  "homepage": "https://github.com/jianan1104/linepay-v4#readme",
+  "bugs": {
+    "url": "https://github.com/jianan1104/linepay-v4/issues"
+  }
+}

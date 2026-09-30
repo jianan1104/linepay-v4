@@ -1,0 +1,34 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24] # vitest needs Node 22.12+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+  node20:
+    # The package itself supports Node 20: build it there and load both formats.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: node -e 'const { LinePay, parseLossless } = require("./dist/index.cjs"); if (parseLossless("{\"t\":2023042201206549310}").t !== "2023042201206549310") process.exit(1); new LinePay({ channelId: "1", channelSecret: "s", env: "sandbox" })'
+      - run: node --input-type=module -e 'import { LinePay } from "./dist/index.js"; new LinePay({ channelId: "1", channelSecret: "s", env: "sandbox" })'
