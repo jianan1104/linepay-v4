@@ -51,8 +51,11 @@ when a version tag is pushed.
    ```
 3. The workflow checks the tag matches `package.json` and has a CHANGELOG
    entry, runs every check (and the sandbox tests when the secrets are set),
-   publishes to npm with provenance, and creates the GitHub Release from the
-   CHANGELOG entry.
+   then publishes `linepay-v4` to npm with provenance and
+   `@jianan1104/linepay-v4` to GitHub Packages, and creates the GitHub
+   Release (notes from the CHANGELOG entry, tarball and SHA-256 attached).
+   A version with a hyphen (`npm version prerelease --preid beta`) goes out
+   under the `next` dist-tag as a pre-release.
 
 ### One-time setup
 
@@ -65,6 +68,9 @@ when a version tag is pushed.
   workflow publishes with OIDC — no npm token is stored in GitHub. Afterwards,
   in the same settings, choose to *require two-factor authentication and
   disallow tokens* for publishing.
+- **GitHub Packages:** nothing to set up — the workflow publishes with the
+  built-in `GITHUB_TOKEN`. After the first release, the package appears under
+  the repository's *Packages*; make it public in its settings if it isn't.
 - **GitHub environment `npm`:** *Settings → Environments → New environment* →
   `npm`; add yourself under *Required reviewers* to approve each publish.
 - **Sandbox secrets (optional):** *Settings → Secrets and variables →

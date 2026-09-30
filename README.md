@@ -12,7 +12,6 @@ Zero-dependency TypeScript SDK for the [LINE Pay Online API v4](https://develope
 
 ## Contents
 
-- [Why](#why)
 - [Install](#install)
 - [Quick start](#quick-start)
 - [Usage](#usage)
@@ -24,23 +23,13 @@ Zero-dependency TypeScript SDK for the [LINE Pay Online API v4](https://develope
 - [Security](#security)
 - [License](#license)
 
-## Why
-
-It gets the parts right that break real integrations:
-
-- **Lossless transaction IDs.** LINE Pay sends `transactionId` as a bare 19-digit JSON number. `JSON.parse` rounds it (`2023042201206549310` → `2023042201206549200`), and your confirm or refund then fails — or hits the wrong transaction. This SDK never lets those IDs become JS numbers: they are `string`s in and out.
-- **Correct signing.** `X-LINE-Authorization` is computed over the exact body bytes that are sent (or the query string for GET), with a fresh nonce per call — no more mysterious `1106`.
-- **Unknown outcomes are not failures.** A timeout on `confirm`, `capture` or `refund` may still have moved money. Those throw `LinePayUnknownOutcomeError` with `movesMoney: true`, so you reconcile instead of retrying blindly.
-- **Actionable errors.** Every `returnCode` comes with a category — `retry`, `reconcile`, `customer` or `merchant` — so you know what to do with it.
-- **Checks before sending.** Amounts that don't add up across packages and products are caught locally with a readable message.
-- **Tested against the real sandbox.** Behaviour the reference doesn't document (negative refund amounts, `1172` on a second confirm, …) is pinned in live tests — see [what the sandbox taught us](#what-the-sandbox-taught-us).
-- No runtime dependencies. ESM and CommonJS, full types, Node.js 20+, per-API read timeouts from the reference.
-
 ## Install
 
 ```sh
 npm install linepay-v4
 ```
+
+Also published to GitHub Packages as `@jianan1104/linepay-v4` (add `@jianan1104:registry=https://npm.pkg.github.com` to your `.npmrc`), and each [GitHub Release](https://github.com/jianan1104/linepay-v4/releases) carries the package tarball with its SHA-256.
 
 ## Quick start
 

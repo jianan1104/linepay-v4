@@ -1,9 +1,15 @@
 name: Release
 
-# Push a tag like v0.2.0 (see CONTRIBUTING.md → Releasing). This checks the
-# tag matches package.json, runs everything CI runs, publishes to npm with
-# provenance through npm Trusted Publishing (OIDC, no npm token stored in
-# GitHub), then creates the GitHub Release from the CHANGELOG entry.
+# Push a version tag (see CONTRIBUTING.md → Releasing):
+#   npm version patch && git push --follow-tags
+# 1. verify:    the tag matches package.json and CHANGELOG.md; every check passes
+# 2. npm:       publishes `linepay-v4` to npmjs.com with provenance, through
+#               npm Trusted Publishing (OIDC — no npm token stored in GitHub)
+# 3. github:    publishes `@jianan1104/linepay-v4` to GitHub Packages
+# 4. release:   creates the GitHub Release: notes from CHANGELOG.md, the
+#               package tarball and its SHA-256 attached
+# A version with a hyphen (0.2.0-beta.1) is published under the `next` tag
+# and released as a pre-release.
 
 on:
   push:
@@ -12,10 +18,17 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   verify:
     name: Verify
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
     env:
       LINEPAY_CHANNEL_ID: ${{ secrets.LINEPAY_CHANNEL_ID }}
       LINEPAY_CHANNEL_SECRET: ${{ secrets.LINEPAY_CHANNEL_SECRET }}
@@ -26,12 +39,15 @@ jobs:
           node-version: 24
           cache: npm
       - name: Tag matches package.json version
+        id: version
         run: |
           version="$(node -p 'require("./package.json").version')"
           if [ "v$version" != "$GITHUB_REF_NAME" ]; then
             echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $version"
             exit 1
           fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$version" == *-* ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
       - name: CHANGELOG has an entry for this version
         run: grep -q "^## \[${GITHUB_REF_NAME#v}\]" CHANGELOG.md || { echo "::error::No '## [${GITHUB_REF_NAME#v}]' section in CHANGELOG.md"; exit 1; }
       - run: npm ci
@@ -42,14 +58,27 @@ jobs:
       - name: Live sandbox tests
         if: env.LINEPAY_CHANNEL_ID != ''
         run: npm run test:sandbox
+      - name: Pack
+        run: |
+          npm pack
+          sha256sum linepay-v4-*.tgz > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: |
+            linepay-v4-*.tgz
+            SHA256SUMS.txt
 
-  publish:
+  npm:
     name: Publish to npm
     needs: verify
     runs-on: ubuntu-latest
     # A GitHub environment, so publishing can require an approval
     # (Settings → Environments → npm → Required reviewers).
-    environment: npm
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/linepay-v4/v/${{ needs.verify.outputs.version }}
     permissions:
       contents: read
       id-token: write # npm Trusted Publishing and provenance
@@ -63,27 +92,69 @@ jobs:
         run: npm install -g npm@latest
       - run: npm ci
       - run: npm run build
-      - run: npm publish --provenance --access public
+      - name: Publish
+        run: npm publish --provenance --access public --tag ${{ needs.verify.outputs.prerelease == 'true' && 'next' || 'latest' }}
 
-  github-release:
+  github-packages:
+    name: Publish to GitHub Packages
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com
+          scope: "@jianan1104"
+      - run: npm ci
+      - run: npm run build
+      - name: Scope the name (GitHub Packages only takes scoped npm packages)
+        run: npm pkg set name=@jianan1104/linepay-v4 publishConfig.registry=https://npm.pkg.github.com
+      - name: Publish
+        run: npm publish --tag ${{ needs.verify.outputs.prerelease == 'true' && 'next' || 'latest' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
     name: GitHub Release
-    needs: publish
+    needs: [verify, npm, github-packages]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
       - name: Release notes from CHANGELOG.md
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${{ needs.verify.outputs.version }}"
           awk -v v="$version" '
             $0 ~ "^## \\[" v "\\]" { on = 1; next }
             on && /^## \[/ { exit }
             on { print }
           ' CHANGELOG.md > notes.md
-          echo "" >> notes.md
-          echo "**npm:** https://www.npmjs.com/package/linepay-v4/v/$version" >> notes.md
+          {
+            echo ""
+            echo "### Install"
+            echo ""
+            echo '```sh'
+            echo "npm install linepay-v4@$version"
+            echo '```'
+            echo ""
+            echo "- npm: https://www.npmjs.com/package/linepay-v4/v/$version (with provenance)"
+            echo "- GitHub Packages: \`@jianan1104/linepay-v4@$version\`"
+            echo "- SHA-256 of the attached tarball: see \`SHA256SUMS.txt\`"
+          } >> notes.md
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+        run: |
+          gh release create "$GITHUB_REF_NAME" linepay-v4-*.tgz SHA256SUMS.txt \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file notes.md \
+            --verify-tag \
+            ${{ needs.verify.outputs.prerelease == 'true' && '--prerelease' || '' }}
