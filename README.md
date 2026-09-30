@@ -213,7 +213,7 @@ Things the reference doesn't say, observed against the sandbox and pinned in `te
 | confirm before the customer approved | `1169` |
 | confirm an already confirmed payment | `1172` |
 | refund more than is left / nothing left | `1164` / `1165` |
-| `refundList` in payment details | amounts are **negative** (`-20`), type `PARTIAL_REFUND` each |
+| `refundList` in payment details | amounts are **negative** (`-20`); type `PAYMENT_REFUND` for one full refund, `PARTIAL_REFUND` for each of several (even the last) |
 | wrong channel secret | `1106` |
 | sandbox keys on the production host | signature accepted; lookups say "not found" (`1150`/`1159`) — a lookup can't tell which environment a key belongs to, so make one real payment before going live |
 | a second *request* with the same `orderId` | accepted in the sandbox — keep your orderIds unique per attempt yourself |

@@ -6,6 +6,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Documentation
+
+- `refundList`: a single full refund is listed as `PAYMENT_REFUND`, not
+  `PARTIAL_REFUND` (seen on the sandbox); only the amounts tell whether a
+  payment is fully refunded.
+
 ## [0.1.0] - 2026-09-30
 
 First release.

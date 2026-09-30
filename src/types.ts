@@ -139,8 +139,10 @@ export type PaymentDetail = {
   payInfo: PayInfo[];
   /**
    * Refunds so far. As the sandbox returns them: `refundAmount` is NEGATIVE
-   * (e.g. -20) and `transactionType` is "PARTIAL_REFUND", even for the last one.
-   * Use Math.abs when adding them up or matching an amount.
+   * (e.g. -20). `transactionType` is "PAYMENT_REFUND" for a single refund of
+   * the whole amount and "PARTIAL_REFUND" for each one otherwise (even the
+   * one that uses up the rest), so don't infer "fully refunded" from it: add
+   * up the amounts with Math.abs and compare with the payment.
    */
   refundList?: { refundTransactionId: TransactionId; transactionType?: string; refundAmount: number; refundTransactionDate: string }[];
   packages?: { id: string; amount: number; name?: string }[];
