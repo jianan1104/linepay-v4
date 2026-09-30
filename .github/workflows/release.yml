@@ -29,9 +29,6 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       prerelease: ${{ steps.version.outputs.prerelease }}
-    env:
-      LINEPAY_CHANNEL_ID: ${{ secrets.LINEPAY_CHANNEL_ID }}
-      LINEPAY_CHANNEL_SECRET: ${{ secrets.LINEPAY_CHANNEL_SECRET }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -59,9 +56,14 @@ jobs:
           node scripts/smoke.mjs
           node scripts/smoke.mjs --cjs
       - run: npm run lint:package
+      # The secrets only reach this step, so the unit tests above stay offline.
       - name: Live sandbox tests
-        if: env.LINEPAY_CHANNEL_ID != ''
-        run: npm run test:sandbox
+        env:
+          LINEPAY_CHANNEL_ID: ${{ secrets.LINEPAY_CHANNEL_ID }}
+          LINEPAY_CHANNEL_SECRET: ${{ secrets.LINEPAY_CHANNEL_SECRET }}
+        run: |
+          if [ -z "$LINEPAY_CHANNEL_ID" ]; then echo "::notice::No sandbox credentials; skipped."; exit 0; fi
+          npm run test:sandbox
       - name: Pack
         run: |
           npm pack

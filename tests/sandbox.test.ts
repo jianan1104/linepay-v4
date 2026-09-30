@@ -9,7 +9,9 @@ import { createNonce, createSignature, LinePay, LinePayApiError, parseLossless, 
 const channelId = process.env.LINEPAY_CHANNEL_ID;
 const channelSecret = process.env.LINEPAY_CHANNEL_SECRET;
 
-describe.skipIf(!channelId || !channelSecret)("LINE Pay sandbox (live)", () => {
+// Each test is one or two round trips to LINE Pay; from a CI runner abroad,
+// the production host alone can take several seconds to answer.
+describe.skipIf(!channelId || !channelSecret)("LINE Pay sandbox (live)", { timeout: 30_000 }, () => {
   // Built on first use: skipIf still runs this body while collecting tests.
   let client: LinePay | undefined;
   const lp = new Proxy({} as LinePay, {
