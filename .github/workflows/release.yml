@@ -92,11 +92,24 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
+      - name: Already on npm?
+        # A version published by hand (or a re-run) is skipped, so the tag
+        # can still produce the GitHub Packages build and the Release.
+        id: published
+        run: |
+          if npm view "linepay-v4@${{ needs.verify.outputs.version }}" version >/dev/null 2>&1; then
+            echo "::notice::linepay-v4@${{ needs.verify.outputs.version }} is already on npm; skipping publish."
+            echo "yes=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: npm with Trusted Publishing support
+        if: steps.published.outputs.yes != 'true'
         run: npm install -g npm@latest
-      - run: npm ci
-      - run: npm run build
+      - if: steps.published.outputs.yes != 'true'
+        run: npm ci
+      - if: steps.published.outputs.yes != 'true'
+        run: npm run build
       - name: Publish
+        if: steps.published.outputs.yes != 'true'
         run: npm publish --provenance --access public --tag ${{ needs.verify.outputs.prerelease == 'true' && 'next' || 'latest' }}
 
   github-packages:
