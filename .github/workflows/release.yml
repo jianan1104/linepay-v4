@@ -20,8 +20,8 @@ jobs:
       LINEPAY_CHANNEL_ID: ${{ secrets.LINEPAY_CHANNEL_ID }}
       LINEPAY_CHANNEL_SECRET: ${{ secrets.LINEPAY_CHANNEL_SECRET }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -54,8 +54,8 @@ jobs:
       contents: read
       id-token: write # npm Trusted Publishing and provenance
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
@@ -72,7 +72,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Release notes from CHANGELOG.md
         run: |
           version="${GITHUB_REF_NAME#v}"
