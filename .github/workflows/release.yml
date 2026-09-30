@@ -69,7 +69,7 @@ jobs:
           npm pack
           sha256sum linepay-v4-*.tgz > SHA256SUMS.txt
           cat SHA256SUMS.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: package
           path: |
@@ -145,7 +145,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: package
       - name: Release notes from CHANGELOG.md
