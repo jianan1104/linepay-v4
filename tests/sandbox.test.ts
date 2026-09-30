@@ -97,6 +97,14 @@ describe.skipIf(!channelId || !channelSecret)("LINE Pay sandbox (live)", () => {
     expect(await code(prod.checkPaymentRequest(r.transactionId))).toMatch(/^(1159|1104|1106)$/);
   });
 
+  it("can't tell sandbox from production keys with a lookup: both hosts verify the signature", async () => {
+    // So a credential check proves the ID/secret pair, not the environment.
+    const prod = new LinePay({ channelId: channelId!, channelSecret: channelSecret!, env: "production" });
+    expect(await code(prod.getPaymentDetails({ orderId: ["sdk-env-check"] }))).toBe("1150");
+    const prodWrong = new LinePay({ channelId: channelId!, channelSecret: "0".repeat(32), env: "production" });
+    expect(await code(prodWrong.getPaymentDetails({ orderId: ["sdk-env-check"] }))).toBe("1106");
+  });
+
   it("reports an unknown pre-approved key as 1190", async () => {
     expect(await code(lp.preapproved.check("RK0000000000000000"))).toBe("1190");
   });
