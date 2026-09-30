@@ -29,8 +29,8 @@ jobs:
           - os: windows-latest
             node: 24
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -56,8 +56,8 @@ jobs:
     # The package supports Node 20: build there and load both module formats.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -87,8 +87,8 @@ jobs:
       LINEPAY_CHANNEL_ID: ${{ secrets.LINEPAY_CHANNEL_ID }}
       LINEPAY_CHANNEL_SECRET: ${{ secrets.LINEPAY_CHANNEL_SECRET }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
