@@ -130,6 +130,60 @@ With `redirectUrls.confirmUrlType: "NONE"`, poll `checkPaymentRequest(transactio
 | `merchantDeviceProfileId`, `merchantDeviceType` | — | optional terminal headers |
 | `fetch` | global `fetch` | custom fetch (tests, proxies) |
 
+## Testing against the LINE Pay sandbox
+
+The unit tests (`npm test`) need nothing. To check the SDK — or your own integration — against LINE Pay itself, use a sandbox merchant:
+
+1. **Get sandbox credentials.** Apply for a sandbox account at [LINE Pay Developers → Sandbox](https://developers-pay.line.me/sandbox) (one sandbox account per email). In the sandbox merchant center, open *Developer tools → Manage link key*, click *View*, and enter the code emailed to you: you get a **channel ID** and a **channel secret**.
+2. **Put them in `.env.sandbox`** (git-ignored — never commit it):
+
+   ```sh
+   cp .env.example .env.sandbox
+   # LINEPAY_CHANNEL_ID=…
+   # LINEPAY_CHANNEL_SECRET=…
+   ```
+
+3. **Run the live tests** — no customer needed:
+
+   ```sh
+   npm run test:sandbox
+   ```
+
+   They call `sandbox-api-pay.line.me` for real: request payments, check them, and pin down how LINE Pay answers (exact 19-digit IDs, GET query signing, 1169 before approval, 1150 for nothing to refund/void/capture, 1106 for a wrong secret, 1190 for an unknown regKey, 2101 for amounts that don't add up). Without credentials they're skipped, so `npm test` and CI never need them.
+
+4. **Walk a whole payment, approved by you:**
+
+   ```sh
+   npm run build && npm run sandbox:flow        # optional amount: npm run sandbox:flow -- 250
+   ```
+
+   It prints a sandbox payment URL. Open it, log in and approve (the page then goes to example.com — expected). The script notices the approval, confirms the payment, reads it back, refunds part of it, tries to refund too much, refunds the rest, and checks every answer.
+
+### What the sandbox taught us
+
+Things the reference doesn't say, observed against the sandbox and pinned in `tests/sandbox.test.ts` / `scripts/sandbox-flow.ts`:
+
+| Situation | LINE Pay answers |
+|---|---|
+| `transactionId` in any response | a bare 19-digit JSON number — `JSON.parse` rounds it; this SDK doesn't |
+| confirm before the customer approved | `1169` |
+| confirm an already confirmed payment | `1172` |
+| refund more than is left / nothing left | `1164` / `1165` |
+| `refundList` in payment details | amounts are **negative** (`-20`), type `PARTIAL_REFUND` each |
+| wrong channel secret | `1106` |
+| sandbox keys on the production host | signature accepted; lookups say "not found" (`1150`/`1159`) — a lookup can't tell which environment a key belongs to, so make one real payment before going live |
+| a second *request* with the same `orderId` | accepted in the sandbox — keep your orderIds unique per attempt yourself |
+| `amount` ≠ Σ packages | `2101` (`form.amount != sum(packages[].amount) + sum(packages[].userFee) + shippingFee`) |
+
+## Development
+
+```sh
+npm test            # unit tests (mocked fetch)
+npm run coverage    # unit tests with coverage thresholds (100% lines/functions, 95% branches)
+npm run typecheck
+npm run build       # ESM + CJS + types into dist/
+```
+
 ## License
 
 MIT

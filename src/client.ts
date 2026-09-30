@@ -145,7 +145,8 @@ export class LinePay {
   /**
    * POST /v4/payments/{transactionId}/confirm — complete the payment after the
    * customer authenticated. `amount`/`currency` must equal the request's: take
-   * them from your records, not from the confirmUrl.
+   * them from your records, not from the confirmUrl. Before the customer
+   * approved: 1169. Confirming an already confirmed payment: 1172.
    */
   async confirm(transactionId: string | bigint, payment: { amount: number; currency: Currency }): Promise<ConfirmResult> {
     return this.call("POST", `/v4/payments/${txId(transactionId)}/confirm`, { body: { amount: payment.amount, currency: payment.currency }, op: "confirm", movesMoney: true });
